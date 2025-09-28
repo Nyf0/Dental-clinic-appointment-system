@@ -1,103 +1,301 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+
+type Service = {
+  id: number;
+  name: string;
+  price: number;
+  priceWithTax: number;
+};
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const TAX_RATE = 0.12;
+
+  useEffect(() => {
+    fetch("http://localhost:3000/services")
+      .then((res) => res.json())
+      .then(setServices);
+  }, []);
+
+  const toggleService = (id: number) => {
+    setSelectedServices((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
+
+  const selectedItems = services.filter((s) => selectedServices.includes(s.id));
+  const baseTotal = selectedItems.reduce((sum, s) => sum + s.price, 0);
+  const taxTotal = baseTotal * TAX_RATE;
+  const grandTotal = baseTotal + taxTotal;
+
+  const bookAppointment = async () => {
+    if (!name || !phone || selectedServices.length === 0) {
+      alert("Please complete all fields and select at least one service.");
+      return;
+    }
+
+    const clientRes = await fetch("http://localhost:3000/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone }),
+    });
+    const client = await clientRes.json();
+
+    const appointmentRes = await fetch("http://localhost:3000/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientId: client.id,
+        serviceIds: selectedServices,
+        date: new Date().toISOString(),
+      }),
+    });
+
+    const appointment = await appointmentRes.json();
+    alert("Appointment booked!\n" + JSON.stringify(appointment, null, 2));
+
+    setSelectedServices([]);
+    setName("");
+    setPhone("");
+  };
+
+  return (
+    <main style={styles.container}>
+      <div style={styles.card}>
+        <header style={styles.header}>
+          <h1 style={styles.title}>Dental Clinic Appointment</h1>
+          <p style={styles.subtitle}>Book your dental services with ease</p>
+        </header>
+
+        <section style={styles.section}>
+          <h2 style={styles.sectionTitle}>Available Services</h2>
+          <div style={styles.servicesGrid}>
+            {services.map((service) => (
+              <div
+                key={service.id}
+                style={{
+                  ...styles.serviceCard,
+                  ...(selectedServices.includes(service.id) ? styles.serviceCardSelected : {})
+                }}
+                onClick={() => toggleService(service.id)}
+              >
+                <div style={styles.serviceHeader}>
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.includes(service.id)}
+                    onChange={() => toggleService(service.id)}
+                    style={styles.checkbox}
+                  />
+                  <span style={styles.serviceName}>{service.name}</span>
+                </div>
+                <div style={styles.servicePrice}>
+                  <div style={styles.priceMain}>₱{service.price}</div>
+                  <div style={styles.taxText}>₱{service.priceWithTax} incl. tax</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={styles.section}>
+          <h2 style={styles.sectionTitle}>Your Information</h2>
+          <div style={styles.formGroup}>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={styles.input}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+        </section>
+
+        <section style={styles.section}>
+          <h2 style={styles.sectionTitle}>Invoice Summary</h2>
+          <div style={styles.invoice}>
+            <div style={styles.invoiceRow}>
+              <span style={styles.invoiceLabel}>Base Total:</span>
+              <span style={styles.invoiceValue}>₱{baseTotal.toFixed(2)}</span>
+            </div>
+            <div style={styles.invoiceRow}>
+              <span style={styles.invoiceLabel}>Tax (12%):</span>
+              <span style={styles.invoiceValue}>₱{taxTotal.toFixed(2)}</span>
+            </div>
+            <div style={{...styles.invoiceRow, ...styles.grandTotal}}>
+              <span style={styles.invoiceLabel}><strong>Grand Total:</strong></span>
+              <span style={styles.invoiceValue}><strong>₱{grandTotal.toFixed(2)}</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <button 
+          onClick={bookAppointment} 
+          style={{
+            ...styles.bookButton,
+            ...((!name || !phone || selectedServices.length === 0) ? styles.bookButtonDisabled : {})
+          }}
+          disabled={!name || !phone || selectedServices.length === 0}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          Book Appointment
+        </button>
+      </div>
+    </main>
   );
 }
+
+const styles = {
+  container: {
+    padding: "2rem",
+    minHeight: "100vh",
+    backgroundColor: "#f5f5f5",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+  },
+  card: {
+    maxWidth: "600px",
+    margin: "0 auto",
+    backgroundColor: "white",
+    borderRadius: "12px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    padding: "2rem"
+  },
+  header: {
+    textAlign: "center" as const,
+    marginBottom: "2rem",
+    borderBottom: "1px solid #e5e5e5",
+    paddingBottom: "1rem"
+  },
+  title: {
+    color: "#1f2937",
+    fontSize: "2rem",
+    fontWeight: "700",
+    margin: "0 0 0.5rem 0"
+  },
+  subtitle: {
+    color: "#6b7280",
+    fontSize: "1rem",
+    margin: "0"
+  },
+  section: {
+    marginBottom: "2rem"
+  },
+  sectionTitle: {
+    color: "#374151",
+    fontSize: "1.25rem",
+    fontWeight: "600",
+    marginBottom: "1rem"
+  },
+  servicesGrid: {
+    display: "grid",
+    gap: "0.75rem"
+  },
+  serviceCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "1rem",
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderColor: "#e5e7eb",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    backgroundColor: "white"
+  },
+  serviceCardSelected: {
+    borderColor: "#3b82f6",
+    backgroundColor: "#eff6ff"
+  },
+  serviceHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem"
+  },
+  checkbox: {
+    width: "1.25rem",
+    height: "1.25rem",
+    cursor: "pointer"
+  },
+  serviceName: {
+    fontWeight: "500",
+    color: "#1f2937"
+  },
+  servicePrice: {
+    textAlign: "right" as const
+  },
+  priceMain: {
+    color: "#1f2937", // Darker color for main price
+    fontWeight: "600"
+  },
+  taxText: {
+    fontSize: "0.875rem",
+    color: "#4b5563" // Darker gray for tax text
+  },
+  formGroup: {
+    display: "grid",
+    gap: "1rem"
+  },
+  input: {
+    padding: "0.75rem 1rem",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    fontSize: "1rem",
+    transition: "border-color 0.2s ease",
+    outline: "none",
+    color: "#1f2937", // Darker color for input text
+    backgroundColor: "white"
+  },
+  invoice: {
+    backgroundColor: "#f8fafc",
+    padding: "1.5rem",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0"
+  },
+  invoiceRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "0.5rem 0",
+    borderBottom: "1px solid #e2e8f0"
+  },
+  invoiceLabel: {
+    color: "#374151" // Darker color for invoice labels
+  },
+  invoiceValue: {
+    color: "#1f2937", // Darker color for invoice values
+    fontWeight: "500"
+  },
+  grandTotal: {
+    borderBottom: "none",
+    fontSize: "1.125rem",
+    paddingTop: "1rem"
+  },
+  bookButton: {
+    width: "100%",
+    padding: "1rem 2rem",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "1.125rem",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+    marginTop: "1rem"
+  },
+  bookButtonDisabled: {
+    backgroundColor: "#9ca3af",
+    cursor: "not-allowed"
+  }
+};
