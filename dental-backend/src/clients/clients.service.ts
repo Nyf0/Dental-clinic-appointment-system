@@ -1,17 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Client } from './client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 
 @Injectable()
 export class ClientsService {
-  private clients: any[] = []; // pretend database
+  constructor(
+    @InjectRepository(Client)
+    private readonly clientRepo: Repository<Client>,
+  ) {}
 
-  create(client: CreateClientDto) {
-    const newClient = { id: Date.now(), ...client };
-    this.clients.push(newClient);
-    return newClient;
+  async create(dto: CreateClientDto): Promise<Client> {
+    const client = this.clientRepo.create(dto);
+    return await this.clientRepo.save(client); // DB handles id
   }
 
-  findAll() {
-    return this.clients;
+  async findAll(): Promise<Client[]> {
+    return await this.clientRepo.find();
   }
 }

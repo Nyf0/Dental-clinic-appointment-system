@@ -17,7 +17,7 @@ export default function Home() {
   const TAX_RATE = 0.12;
 
   useEffect(() => {
-    fetch("http://localhost:3000/services")
+    fetch("http://localhost:4000/services")
       .then((res) => res.json())
       .then(setServices);
   }, []);
@@ -29,7 +29,7 @@ export default function Home() {
   };
 
   const selectedItems = services.filter((s) => selectedServices.includes(s.id));
-  const baseTotal = selectedItems.reduce((sum, s) => sum + s.price, 0);
+  const baseTotal = selectedItems.reduce((sum, s) => sum + Number(s.price), 0);
   const taxTotal = baseTotal * TAX_RATE;
   const grandTotal = baseTotal + taxTotal;
 
@@ -39,14 +39,14 @@ export default function Home() {
       return;
     }
 
-    const clientRes = await fetch("http://localhost:3000/clients", {
+    const clientRes = await fetch("http://localhost:4000/clients", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, phone }),
     });
     const client = await clientRes.json();
 
-    const appointmentRes = await fetch("http://localhost:3000/appointments", {
+    const appointmentRes = await fetch("http://localhost:4000/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
