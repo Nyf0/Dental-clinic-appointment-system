@@ -1,0 +1,32 @@
+Folder PATH listing
+Volume serial number is E056-244C
+C:.
+¦   app.controller.spec.ts
+¦   app.controller.ts
+¦   app.module.ts
+¦   app.service.ts
+¦   main.ts
+¦   tree_output.txt
+¦   
++---clients
+¦   ¦   clients.controller.spec.ts
+¦   ¦   clients.controller.ts
+¦   ¦   clients.module.ts
+¦   ¦   clients.service.spec.ts
+¦   ¦   clients.service.ts
+¦   ¦   
+¦   +---dto
+¦       +---create-client.dto
+¦               create-client.dto.ts
+¦               
++---services
+    ¦   services.controller.spec.ts
+    ¦   services.controller.ts
+    ¦   services.module.ts
+    ¦   services.service.spec.ts
+    ¦   services.service.ts
+    ¦   
+    +---dto
+        +---create-service.dto
+                create-service.dto.ts
+                
