@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 type Service = {
   id: number;
@@ -35,37 +36,50 @@ export default function Home() {
 
   const bookAppointment = async () => {
     if (!name || !phone || selectedServices.length === 0) {
-      alert("Please complete all fields and select at least one service.");
+      toast.error("Please complete all fields and select at least one service.");
       return;
     }
 
-    const clientRes = await fetch("http://localhost:4000/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone }),
-    });
-    const client = await clientRes.json();
+    try {
+      const clientRes = await fetch("http://localhost:4000/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone }),
+      });
+      if (!clientRes.ok) throw new Error("Failed to create client");
+      const client = await clientRes.json();
 
-    const appointmentRes = await fetch("http://localhost:4000/appointments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientId: client.id,
-        serviceIds: selectedServices,
-        date: new Date().toISOString(),
-      }),
-    });
+      const appointmentRes = await fetch("http://localhost:4000/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: client.id,
+          serviceIds: selectedServices,
+          date: new Date().toISOString(),
+        }),
+      });
+      if (!appointmentRes.ok) throw new Error("Failed to create appointment");
 
-    const appointment = await appointmentRes.json();
-    alert("Appointment booked!\n" + JSON.stringify(appointment, null, 2));
+      const appointment = await appointmentRes.json();
+      toast.success("Appointment booked successfully!");
 
-    setSelectedServices([]);
-    setName("");
-    setPhone("");
+      console.log("Appointment booked:", appointment);
+
+      // reset form
+      setSelectedServices([]);
+      setName("");
+      setPhone("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong while booking appointment.");
+    }
   };
 
   return (
     <main style={styles.container}>
+      {/* Toast container */}
+      <Toaster position="top-right" reverseOrder={false} />
+
       <div style={styles.card}>
         <header style={styles.header}>
           <h1 style={styles.title}>Dental Clinic Appointment</h1>
@@ -80,7 +94,9 @@ export default function Home() {
                 key={service.id}
                 style={{
                   ...styles.serviceCard,
-                  ...(selectedServices.includes(service.id) ? styles.serviceCardSelected : {})
+                  ...(selectedServices.includes(service.id)
+                    ? styles.serviceCardSelected
+                    : {}),
                 }}
                 onClick={() => toggleService(service.id)}
               >
@@ -95,7 +111,9 @@ export default function Home() {
                 </div>
                 <div style={styles.servicePrice}>
                   <div style={styles.priceMain}>₱{service.price}</div>
-                  <div style={styles.taxText}>₱{service.priceWithTax} incl. tax</div>
+                  <div style={styles.taxText}>
+                    ₱{service.priceWithTax} incl. tax
+                  </div>
                 </div>
               </div>
             ))}
@@ -133,18 +151,23 @@ export default function Home() {
               <span style={styles.invoiceLabel}>Tax (12%):</span>
               <span style={styles.invoiceValue}>₱{taxTotal.toFixed(2)}</span>
             </div>
-            <div style={{...styles.invoiceRow, ...styles.grandTotal}}>
-              <span style={styles.invoiceLabel}><strong>Grand Total:</strong></span>
-              <span style={styles.invoiceValue}><strong>₱{grandTotal.toFixed(2)}</strong></span>
+            <div style={{ ...styles.invoiceRow, ...styles.grandTotal }}>
+              <span style={styles.invoiceLabel}>
+                <strong>Grand Total:</strong>
+              </span>
+              <span style={styles.invoiceValue}>
+                <strong>₱{grandTotal.toFixed(2)}</strong>
+              </span>
             </div>
           </div>
         </section>
 
-        <button 
-          onClick={bookAppointment} 
+        <button
+          onClick={bookAppointment}
           style={{
             ...styles.bookButton,
-            ...((!name || !phone || selectedServices.length === 0) ? styles.bookButtonDisabled : {})
+            ...((!name || !phone || selectedServices.length === 0) &&
+              styles.bookButtonDisabled),
           }}
           disabled={!name || !phone || selectedServices.length === 0}
         >
@@ -160,7 +183,7 @@ const styles = {
     padding: "2rem",
     minHeight: "100vh",
     backgroundColor: "#f5f5f5",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   },
   card: {
     maxWidth: "600px",
@@ -168,37 +191,37 @@ const styles = {
     backgroundColor: "white",
     borderRadius: "12px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    padding: "2rem"
+    padding: "2rem",
   },
   header: {
     textAlign: "center" as const,
     marginBottom: "2rem",
     borderBottom: "1px solid #e5e5e5",
-    paddingBottom: "1rem"
+    paddingBottom: "1rem",
   },
   title: {
     color: "#1f2937",
     fontSize: "2rem",
     fontWeight: "700",
-    margin: "0 0 0.5rem 0"
+    margin: "0 0 0.5rem 0",
   },
   subtitle: {
     color: "#6b7280",
     fontSize: "1rem",
-    margin: "0"
+    margin: "0",
   },
   section: {
-    marginBottom: "2rem"
+    marginBottom: "2rem",
   },
   sectionTitle: {
     color: "#374151",
     fontSize: "1.25rem",
     fontWeight: "600",
-    marginBottom: "1rem"
+    marginBottom: "1rem",
   },
   servicesGrid: {
     display: "grid",
-    gap: "0.75rem"
+    gap: "0.75rem",
   },
   serviceCard: {
     display: "flex",
@@ -211,40 +234,40 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.2s ease",
-    backgroundColor: "white"
+    backgroundColor: "white",
   },
   serviceCardSelected: {
     borderColor: "#3b82f6",
-    backgroundColor: "#eff6ff"
+    backgroundColor: "#eff6ff",
   },
   serviceHeader: {
     display: "flex",
     alignItems: "center",
-    gap: "0.75rem"
+    gap: "0.75rem",
   },
   checkbox: {
     width: "1.25rem",
     height: "1.25rem",
-    cursor: "pointer"
+    cursor: "pointer",
   },
   serviceName: {
     fontWeight: "500",
-    color: "#1f2937"
+    color: "#1f2937",
   },
   servicePrice: {
-    textAlign: "right" as const
+    textAlign: "right" as const,
   },
   priceMain: {
-    color: "#1f2937", // Darker color for main price
-    fontWeight: "600"
+    color: "#1f2937",
+    fontWeight: "600",
   },
   taxText: {
     fontSize: "0.875rem",
-    color: "#4b5563" // Darker gray for tax text
+    color: "#4b5563",
   },
   formGroup: {
     display: "grid",
-    gap: "1rem"
+    gap: "1rem",
   },
   input: {
     padding: "0.75rem 1rem",
@@ -253,33 +276,33 @@ const styles = {
     fontSize: "1rem",
     transition: "border-color 0.2s ease",
     outline: "none",
-    color: "#1f2937", // Darker color for input text
-    backgroundColor: "white"
+    color: "#1f2937",
+    backgroundColor: "white",
   },
   invoice: {
     backgroundColor: "#f8fafc",
     padding: "1.5rem",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0"
+    border: "1px solid #e2e8f0",
   },
   invoiceRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     padding: "0.5rem 0",
-    borderBottom: "1px solid #e2e8f0"
+    borderBottom: "1px solid #e2e8f0",
   },
   invoiceLabel: {
-    color: "#374151" // Darker color for invoice labels
+    color: "#374151",
   },
   invoiceValue: {
-    color: "#1f2937", // Darker color for invoice values
-    fontWeight: "500"
+    color: "#1f2937",
+    fontWeight: "500",
   },
   grandTotal: {
     borderBottom: "none",
     fontSize: "1.125rem",
-    paddingTop: "1rem"
+    paddingTop: "1rem",
   },
   bookButton: {
     width: "100%",
@@ -292,10 +315,10 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
     transition: "background-color 0.2s ease",
-    marginTop: "1rem"
+    marginTop: "1rem",
   },
   bookButtonDisabled: {
     backgroundColor: "#9ca3af",
-    cursor: "not-allowed"
-  }
+    cursor: "not-allowed",
+  },
 };
