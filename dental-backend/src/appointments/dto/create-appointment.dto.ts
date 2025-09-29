@@ -1,5 +1,5 @@
 export class CreateAppointmentDto {
-  clientId: number;      // existing client
-  serviceIds: number[];  // one or more services
-  date: string;          // appointment date (ISO string for now)
+  clientId: number;      // references Client.id
+  serviceIds: number[];  // references Service.id
+  date: string;          // ISO date string
 }

@@ -6,8 +6,17 @@ C:.
 ¦   app.module.ts
 ¦   app.service.ts
 ¦   main.ts
-¦   tree_output.txt
+¦   tree.txt
 ¦   
++---appointments
+¦   ¦   appointment.entity.ts
+¦   ¦   appointments.controller.ts
+¦   ¦   appointments.module.ts
+¦   ¦   appointments.service.ts
+¦   ¦   
+¦   +---dto
+¦           create-appointment.dto.ts
+¦           
 +---clients
 ¦   ¦   clients.controller.spec.ts
 ¦   ¦   clients.controller.ts
@@ -16,10 +25,10 @@ C:.
 ¦   ¦   clients.service.ts
 ¦   ¦   
 ¦   +---dto
-¦       +---create-client.dto
-¦               create-client.dto.ts
-¦               
+¦           create-client.dto.ts
+¦           
 +---services
+    ¦   service.entity.ts
     ¦   services.controller.spec.ts
     ¦   services.controller.ts
     ¦   services.module.ts
@@ -27,6 +36,5 @@ C:.
     ¦   services.service.ts
     ¦   
     +---dto
-        +---create-service.dto
-                create-service.dto.ts
-                
+            create-service.dto.ts
+            
